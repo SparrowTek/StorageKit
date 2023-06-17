@@ -17,7 +17,7 @@ public struct StorageKit {
     }
     
     /// Returns URL constructed from specified directory
-    static private func getURL(for directory: Directory, fileManager: FileManager = .default) throws -> URL {
+    public static private func getURL(for directory: Directory, fileManager: FileManager = .default) throws -> URL {
         var searchPathDirectory: FileManager.SearchPathDirectory
         
         switch directory {
@@ -38,7 +38,7 @@ public struct StorageKit {
     ///   - object: the encodable struct to store
     ///   - directory: where to store the struct
     ///   - fileName: what to name the file where the struct data will be stored
-    static func store<T: Encodable>(_ object: T, to directory: Directory, as fileName: String, encoder: JSONEncoder = JSONEncoder(), fileManager: FileManager = .default) throws {
+    public static func store<T: Encodable>(_ object: T, to directory: Directory, as fileName: String, encoder: JSONEncoder = JSONEncoder(), fileManager: FileManager = .default) throws {
         guard let url = try? getURL(for: directory).appendingPathComponent(fileName, isDirectory: false) else { throw StorageError.createURLError }
         
         do {
@@ -59,7 +59,7 @@ public struct StorageKit {
     ///   - directory: directory where struct data is stored
     ///   - type: struct type (i.e. Message.self)
     /// - Returns: decoded struct model(s) of data
-    static func retrieve<T: Decodable>(_ fileName: String, from directory: Directory, as type: T.Type, decoder: JSONDecoder = JSONDecoder(), fileManager: FileManager = .default) -> T? {
+    public static func retrieve<T: Decodable>(_ fileName: String, from directory: Directory, as type: T.Type, decoder: JSONDecoder = JSONDecoder(), fileManager: FileManager = .default) -> T? {
         guard let url = try? getURL(for: directory).appendingPathComponent(fileName, isDirectory: false) else { return nil }
         guard fileManager.fileExists(atPath: url.path) else { return nil }
         guard let data = fileManager.contents(atPath: url.path) else { return nil }
@@ -68,14 +68,14 @@ public struct StorageKit {
     }
     
     /// Remove all files at specified directory
-    static func clear(_ directory: Directory, fileManager: FileManager = .default) throws {
+    public static func clear(_ directory: Directory, fileManager: FileManager = .default) throws {
         let url = try getURL(for: directory)
         let contents = try fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: nil, options: [])
         try contents.forEach { try fileManager.removeItem(at: $0) }
     }
     
     /// Remove specified file from specified directory
-    static func remove(_ fileName: String, from directory: Directory, fileManager: FileManager = .default) throws {
+    public static func remove(_ fileName: String, from directory: Directory, fileManager: FileManager = .default) throws {
         guard let url = try? getURL(for: directory).appendingPathComponent(fileName, isDirectory: false) else { throw StorageError.createURLError }
         guard fileManager.fileExists(atPath: url.path) else { return }
         
@@ -88,7 +88,7 @@ public struct StorageKit {
     
     /// Returns Bool indicating whether file exists at specified directory with specified file name
     ///  - Returns: Bool indicating whether the file exists at the specified directory with the specified name
-    static func fileExists(_ fileName: String, in directory: Directory, fileManager: FileManager = .default) -> Bool {
+    public static func fileExists(_ fileName: String, in directory: Directory, fileManager: FileManager = .default) -> Bool {
         guard let url = try? getURL(for: directory).appendingPathComponent(fileName, isDirectory: false) else { return false }
         return fileManager.fileExists(atPath: url.path)
     }
