@@ -8,7 +8,7 @@ enum StorageError: String, Error {
 
 public struct StorageKit {
     
-    enum Directory {
+    public enum Directory {
         /// Only documents and other data that is user-generated, or that cannot otherwise be recreated by your application, should be stored in the <Application_Home>/Documents directory and will be automatically backed up by iCloud.
         case documents
         
