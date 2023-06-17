@@ -17,7 +17,7 @@ public struct StorageKit {
     }
     
     /// Returns URL constructed from specified directory
-    public static private func getURL(for directory: Directory, fileManager: FileManager = .default) throws -> URL {
+    private static func getURL(for directory: Directory, fileManager: FileManager = .default) throws -> URL {
         var searchPathDirectory: FileManager.SearchPathDirectory
         
         switch directory {
