@@ -16,7 +16,7 @@ public struct Disk<T: Codable> {
         StorageKit.retrieve(fileName, from: directory, as: T.self)
     }
     
-    public init(fileName: String, directory: StorageKit.Directory = .documents) {
+    public init(_ type: T.Type, fileName: String, directory: StorageKit.Directory = .documents) {
         self.fileName = fileName
         self.directory = directory
     }
