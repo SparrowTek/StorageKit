@@ -1,12 +1,13 @@
 import Foundation
 
-enum StorageError: String, Error {
-    case createURLError = "Could not create URL for specified directory"
-    case storeObjectError = "There was an error storing this object"
-    case removeObjectError = "There was a problem removing that object"
+public enum StorageError: Error {
+    case createURL
+    case removeObject
+    case clearDirectory
+    case createURLError
 }
 
-public struct StorageKit {
+public struct Storage {
     
     public enum Directory {
         /// Only documents and other data that is user-generated, or that cannot otherwise be recreated by your application, should be stored in the <Application_Home>/Documents directory and will be automatically backed up by iCloud.
@@ -17,79 +18,64 @@ public struct StorageKit {
     }
     
     /// Returns URL constructed from specified directory
-    private static func getURL(for directory: Directory, fileManager: FileManager = .default) throws -> URL {
-        var searchPathDirectory: FileManager.SearchPathDirectory
-        
-        switch directory {
-        case .documents:
-            searchPathDirectory = .documentDirectory
-        case .caches:
-            searchPathDirectory = .cachesDirectory
+    private static func getURL(for directory: Directory, fileManager: FileManager) throws -> URL {
+        let searchPathDirectory: FileManager.SearchPathDirectory = switch directory {
+        case .documents: .documentDirectory
+        case .caches: .cachesDirectory
         }
         
         guard let url = fileManager.urls(for: searchPathDirectory, in: .userDomainMask).first else { throw StorageError.createURLError }
         return url
     }
     
+    /// returns the URL location for the file name and directory
+    /// - Parameters
+    ///     - fileName: the name of the file
+    ///     - directory: `Directory` to look in
+    ///     - fileManager: An optional FileManager` argument. Defaults to `FileManager.default`
+    ///  - Returns: an optional `URL`
+    public static func url(for fileName: String, in directory: Directory, fileManager: FileManager = .default) -> URL? {
+        try? getURL(for: directory, fileManager: fileManager).appendingPathComponent(fileName, isDirectory: false)
+    }
     
     /// Store an encodable struct to the specified directory on disk
     ///
     /// - Parameters:
-    ///   - object: the encodable struct to store
+    ///   - data: the data to store
     ///   - directory: where to store the struct
     ///   - fileName: what to name the file where the struct data will be stored
-    public static func store<T: Encodable>(_ object: T, to directory: Directory, as fileName: String, encoder: JSONEncoder = JSONEncoder(), fileManager: FileManager = .default) throws {
-        guard let url = try? getURL(for: directory).appendingPathComponent(fileName, isDirectory: false) else { throw StorageError.createURLError }
-        
-        do {
-            let data = try encoder.encode(object)
-            if fileManager.fileExists(atPath: url.path) {
-                try fileManager.removeItem(at: url)
-            }
-            try data.write(to: url, options: .completeFileProtection)
-        } catch {
-            throw StorageError.storeObjectError
-        }
-    }
-    
-    /// Retrieve and convert a struct from a file on disk
-    ///
-    /// - Parameters:
-    ///   - fileName: name of the file where struct data is stored
-    ///   - directory: directory where struct data is stored
-    ///   - type: struct type (i.e. Message.self)
-    /// - Returns: decoded struct model(s) of data
-    public static func retrieve<T: Decodable>(_ fileName: String, from directory: Directory, as type: T.Type, decoder: JSONDecoder = JSONDecoder(), fileManager: FileManager = .default) -> T? {
-        guard let url = try? getURL(for: directory).appendingPathComponent(fileName, isDirectory: false) else { return nil }
-        guard fileManager.fileExists(atPath: url.path) else { return nil }
-        guard let data = fileManager.contents(atPath: url.path) else { return nil }
-        
-        return try? decoder.decode(type, from: data)
-    }
-    
-    /// Remove all files at specified directory
-    public static func clear(_ directory: Directory, fileManager: FileManager = .default) throws {
-        let url = try getURL(for: directory)
-        let contents = try fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: nil, options: [])
-        try contents.forEach { try fileManager.removeItem(at: $0) }
+    ///   - fileManager: An optional FileManager` argument. Defaults to `FileManager.default`
+    public static func store(_ data: Data, to directory: Directory, as fileName: String, fileManager: FileManager = .default) throws {
+        guard !fileExists(fileName, in: directory) else { return }
+        guard let url = try? getURL(for: directory, fileManager: fileManager).appendingPathComponent(fileName, isDirectory: false) else { throw StorageError.createURLError }
+        try data.write(to: url, options: .completeFileProtection)
     }
     
     /// Remove specified file from specified directory
     public static func remove(_ fileName: String, from directory: Directory, fileManager: FileManager = .default) throws {
-        guard let url = try? getURL(for: directory).appendingPathComponent(fileName, isDirectory: false) else { throw StorageError.createURLError }
-        guard fileManager.fileExists(atPath: url.path) else { return }
+        guard !fileExists(fileName, in: directory) else { return }
+        guard let url = try? getURL(for: directory, fileManager: fileManager).appendingPathComponent(fileName, isDirectory: false) else { throw StorageError.createURLError }
         
         do {
             try fileManager.removeItem(at: url)
         } catch {
-            throw StorageError.removeObjectError
+            throw StorageError.removeObject
         }
     }
     
-    /// Returns Bool indicating whether file exists at specified directory with specified file name
-    ///  - Returns: Bool indicating whether the file exists at the specified directory with the specified name
+    /// - Returns: `Bool` indicating whether file exists at specified directory with specified file name
     public static func fileExists(_ fileName: String, in directory: Directory, fileManager: FileManager = .default) -> Bool {
-        guard let url = try? getURL(for: directory).appendingPathComponent(fileName, isDirectory: false) else { return false }
+        guard let url = try? getURL(for: directory, fileManager: fileManager).appendingPathComponent(fileName, isDirectory: false) else { return false }
         return fileManager.fileExists(atPath: url.path)
+    }
+    
+    /// Remove all files at specified directory
+    public static func clear(_ directory: Directory, fileManager: FileManager = .default) throws {
+        guard let url = try? getURL(for: directory, fileManager: fileManager) else { return }
+        let contents = try fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: nil, options: [])
+        
+        for fileUrl in contents {
+            try fileManager.removeItem(at: fileUrl)
+        }
     }
 }
