@@ -1,5 +1,8 @@
 # StorageKit
 
+### WARNING
+This package is subject to change a lot. If you want to use this it probably makes sense to copy and paste the code (it is only 1 file with 82 lines of code).   
+
 Sometimes Core Data or SQLite are overkill for your app. In those situations, StorageKit is a great solution to save `Codable` objects to disk.
 
 ## Install StorageKit
